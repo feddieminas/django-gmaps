@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col mt-3 mt-md-4">
+        <div class="jumbotron mb-2 p-3">
+            <h1 class="display-4">Project Register</h1>
+            <div class="row">
+                <div class="col-9 col-md-5 col-lg-4">
+                        <p class="lead font-italic pl-1">Company's Global Operations</p>
+                 </div>
+                <div class="col-3 col-md-2 pl-0">
+                    <a href="{% url 'projects:project-create' %}" 
+                       class="btn btn-success p-3 px-sm-3 py-sm-2 px-lg-3 py-lg-2">
+                       <i class="fas fa-plus p-1" style="font-size:21px;line-height:15px;"></i>
+                       <span class="d-none d-sm-inline">Add</span>
+                    </a>
+                </div>
+            </div>
+            <hr class="my-2 my-sm-2 bg-light" style="height:2px;border:0;">
+        </div>
+    </div>
+</div>          
+
+<div class="overflow-auto">
+    <table class="table table-light table-bordered table-hover text-center mt-3 mt-sm-4">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">COUNTRY</th>
+                <th scope="col">PHASE</th>
+                <th scope="col">MW</th>
+                <th scope="col"><i class="fas fa-1x fa-user-edit text-info" style="font-size:21px;"></i></th>
+                <th scope="col"><i class="fas fa-1x fa-user-minus text-danger" style="font-size:21px;"></i></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td><a href="{% url 'projects:project-detail' project.id %}">{{forloop.counter}}</a></td>
+                <td>{{ project.country.name|upper }}</td>
+                <td>{{ project.phase|upper }}</td>
+                <td>{{ project.mw }}</td>
+                <td>
+                    <a href="{% url 'projects:project-update' project.id %}" class="btn btn-info">Update</a>
+                </td>
+                <td>
+                    <a href="{% url 'projects:project-delete' project.id %}" class="btn btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if is_paginated %}
+        {% include "partials/_pagination.html" %}
+    {% endif %}
+</div>
+
+{% endblock %}

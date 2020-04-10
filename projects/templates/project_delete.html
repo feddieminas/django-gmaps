@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card mt-3 mt-sm-4">
+    <div class="card-header">
+        <h5 class="card-title">Delete Project #{{project.id}}</h5>
+        <h6 class="text-muted">Owner: {{project.owner}}</h6>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="alert alert-warning" role="alert">
+                Are you sure you want to delete <strong>{{ project }}</strong> ?
+            </div>
+            {% if request.user.is_authenticated and project.owner == request.user %}
+                <button type="submit" class="btn btn-danger btn-lg col-md-2">Delete</button>
+            {% else %}
+                <span class="d-inline" tabindex="0" data-toggle="tooltip" title="Cannot Delete">
+                    <button type="button" class="btn btn-danger btn-lg col-md-2" disabled 
+                    style="pointer-events:none;">Delete</button>
+                </span>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% endblock %}

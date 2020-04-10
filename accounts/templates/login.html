@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<form method="POST" action="{% url 'login' %}?next={{ next }}" class="mt-1 pt-3">
+    <fieldset class="form-group">
+        <legend>Login</legend>
+        
+        {% if next %}
+            <p>No account? <a href="{% url 'registration' %}?next={{ next }}">Sign up</a> now.</p>
+        {% else %}        
+            <p>No account? <a href="{% url 'registration' %}">Sign up</a> now.</p>
+        {% endif %}
+            
+        <br>
+
+        {% for error in login_form.non_field_errors %}
+            <div class="alert alert-danger col-md-6">{{ error|escape }}</div>
+        {% endfor %}
+        
+        {% csrf_token %}
+
+        <div class="form-row d-block">
+            <div class="form-group col-md-6 mb-0">
+              {{ login_form.username|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+              {{ login_form.password|as_crispy_field }}
+            </div>
+        </div>
+        
+        <p><a href="#" class="btn p-0 disabled">Reset Password</a></p>
+        
+        <button type="submit" class="btn btn-lg btn-primary col-md-6">Login</button>
+    </fieldset>    
+</form>
+
+{% endblock %}

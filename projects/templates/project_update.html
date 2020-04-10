@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="card mt-3 mt-sm-4">
+    <div class="card-header">
+        <h5 class="card-title">Project Update #{{project.id}}</h5>
+        <h6 class="text-muted">Owner: {{project.owner}}</h6>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{form | crispy}}
+            {% if request.user.is_authenticated and project.owner == request.user %}
+                <button type="submit" class="btn btn-success btn-lg col-md-2">Update</button>
+            {% else %}
+                <span class="d-inline" tabindex="0" data-toggle="tooltip" title="Cannot Update">
+                    <button type="button" class="btn btn-success btn-lg col-md-2" disabled 
+                    style="pointer-events:none;">Update</button>
+                </span>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% endblock %}

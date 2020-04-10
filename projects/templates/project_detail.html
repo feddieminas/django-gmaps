@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card mt-3 mt-sm-4">
+    <div class="card-header">
+        <h5 class="card-title">Project Details #{{project.id}}</h5>
+    </div>
+    <div class="card-body">
+    <dl class="row">
+        {% for name, value in project.get_fields %}
+            <dt class="col-sm-3">{{ name|upper }}</dt>
+            <dd class="col-sm-9">{{ value }}</dd>
+        {% endfor %}
+    </dl>
+
+    </div>
+</div>
+
+{% endblock %}
