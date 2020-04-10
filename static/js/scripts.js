@@ -5,9 +5,6 @@ $('[data-toggle="tooltip"]').tooltip();
 
 // MAPS
 
-// ex.
-// https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=Australia&inputtype=textquery&fields=formatted_address,geometry&key=AIzaSyDjqR838ld_cLypsYIPLOOyYfYvmY05y4Y
-
 $(".section-container").parent().removeClass("container").addClass("container-fluid");
 
 $('#index-form').on('submit', function(e){
@@ -36,8 +33,11 @@ $('#index-form').on('submit', function(e){
       }
     })
     .done(function(json) {
-        projects = JSON.parse(json.projects);
-        addMarkers(projects);
+        // adjust markers
+        // projects = JSON.parse(json.projects);
+        // addMarkers(projects);
+        // zoom to country place if single country is selected
+        onPlaceChanged($('#id_country').val());
     })
     .fail(function(xhr,msg,err) {
     })
@@ -62,17 +62,25 @@ function initMap() {
 
   map = new google.maps.Map(document.getElementById("map"), options);
 
+  //add Markers
   addMarkers(projects);
+
+  // zoom to country place if single country is selected
+  onPlaceChanged($('#id_country').val());
 };
 
 // clear current google map's markers to insert new ones 
 function clearMarkers() {
+  infowindow = new google.maps.InfoWindow();
+  infowindow.close();
+  const markerCluster = new MarkerClusterer(map, markers);
+  markerCluster.clearMarkers();
   for (let i = 0; i < markers.length; i++) {
     if (markers[i]) {
       markers[i].setMap(null);
     }
   }
-  markers = new Array();
+  markers.length = 0;
 }
 
 function addMarkers(projects) {
@@ -126,49 +134,49 @@ function addMarkers(projects) {
     });
 
     // Set Market Clusterer if any
-    setTimeout(MarketCluster(i,j), 1);
-    
-    // zoom to country place if single country is selected
-    onPlaceChanged(countryLatLng, $('#id_country').val());
-    
-    // build Info Content below map
+    if (i > 0 && i+1 < projects.length) {
+      if (projects[i].fields.country != projects[i+1].fields.country) {
+        setTimeout(MarketCluster(i,j), 1);
+      }
+    }
 
     // drop marker if not a Cluster
-    if (i>0 && i+1 < projects.length) {
+    if (i > 0 && i+1 < projects.length) {
       if ((projects[i].fields.country != projects[i-1].fields.country
         ) && (projects[i].fields.country != projects[i+1].fields.country)) {
         setTimeout(dropMarker(i), i * 100);
       }
     }
+
+    // build Info Content below map
     
   }
   return;
 }
 
 function MarketCluster(i,j) {
-  if (i > 0 && i+1 < projects.length) {
-    if (projects[i].fields.country != projects[i+1].fields.country) {
-      let markerCluster = new MarkerClusterer(map, markers.slice(j,i+1),
-      {
-        maxZoom: 10,
-        averageCenter: true,
-        imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-      }
-      )
+  let markerCluster = new MarkerClusterer(map, markers.slice(j,i+1),
+    {
+      maxZoom: 10,
+      averageCenter: true,
+      imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
     }
-  }
+    )
   return;
 }
 
-function onPlaceChanged(countryLatLng, filterCountry) {
+function onPlaceChanged(filterCountry) {
   if (filterCountry != "") {
+    const countryLatLng = projectsLatLng.filter(
+      obj => obj.fields.name  ===  filterCountry
+    );
     map.panTo({
       "lat": parseFloat(countryLatLng[0].fields.latitude),
       "lng": parseFloat(countryLatLng[0].fields.longitude)
     });
     map.setZoom(5);
   } else {
-    map.setCenter({ "lat": 39.074208, "lng": 21.824312 });
+    map.setCenter({ "lat": 34.5531, "lng": 18.0480 });
     map.setZoom(3);
   }
 }
