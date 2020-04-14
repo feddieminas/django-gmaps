@@ -53,20 +53,3 @@ class IndexView(View):
                          projectsLatLng)                        
                         }
         return render(request, 'index.html', context_data)
-
-    def post(self, request, *args, **kwargs):
-        filter_form = ProjectsFilterForm(request.POST)
-        if filter_form.is_valid():
-            country, phase = filter_form.cleaned_data['country'], filter_form.cleaned_data['phase']
-            params_is_null = list(map(lambda x : x in [''], [country,phase]))
-            if all(params_is_null):
-                projects_filtered = Project.objects.all()
-            elif any(params_is_null):
-                projects_filtered = Project.objects.filter(
-                    Q(country__iexact=country) | Q(phase__iexact=phase))
-            else:
-                projects_filtered = Project.objects.filter(
-                    Q(country__iexact=country) & Q(phase__iexact=phase))
-        else:
-            projects_filtered = Project.objects.none()
-        return JsonResponse({'projects': serialize("json", projects_filtered)})

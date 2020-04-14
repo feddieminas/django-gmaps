@@ -7,42 +7,27 @@ $('[data-toggle="tooltip"]').tooltip();
 
 $(".section-container").parent().removeClass("container").addClass("container-fluid");
 
-$('#index-form').on('submit', function(e){
-  e.preventDefault();
-
-  const csrftoken = $(this).find('input[type="hidden"]').val();
-  function csrfSafeMethod(method) {
-      return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+function addWorldIcon(filterCountry) {
+  if (filterCountry != "") {
+    $('#flag_id_country').addClass('d-none').removeClass('d-none');
+    $('#flag_id_country').next().remove();
+  } else {
+    $('#flag_id_country').removeClass('d-none').addClass('d-none');
+    $('#flag_id_country').after('<i class="fas fa-1x fa-globe" style="margin:6px 4px 0;"></i>');
   }
+}
 
-  $.ajaxSetup({
-      beforeSend: function(xhr, settings) {
-          if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-              xhr.setRequestHeader("X-CSRFToken", csrftoken);
-          }
-      }
-  });
-
-  $.ajax({
-    url : urlPost,
-    type : "POST",
-    data : { 
-      country : $('#id_country').val(),
-      phase : $('#id_phase').val(),
-      csrfmiddlewaretoken: csrftoken
-      }
-    })
-    .done(function(json) {
-        // adjust markers
-        // projects = JSON.parse(json.projects);
-        // addMarkers(projects);
-        // zoom to country place if single country is selected
-        onPlaceChanged($('#id_country').val());
-    })
-    .fail(function(xhr,msg,err) {
-    })
-
+// Country On Change Handling
+$('#index-form #id_country').on('change', function(e){
+  e.preventDefault();
+  // insert World Icon if All Countries is Selected
+  addWorldIcon($(this).val());
+  // zoom to country place if single country is selected
+  onPlaceChanged($(this).val());
 });
+
+// Font Weight to 100 the disabled phase filter
+$('#index-form #id_phase').css({'font-weight': 100});
 
 function initMap() {
 
@@ -65,22 +50,50 @@ function initMap() {
   //add Markers
   addMarkers(projects);
 
+  // insert World Icon if All Countries is Selected
+  addWorldIcon($('#id_country').val());
+
   // zoom to country place if single country is selected
   onPlaceChanged($('#id_country').val());
 };
+
+function MarketClusterClearRemain() {
+  const patt = /markerclusterer/i;
+  const mcRemainders = $("#map div").filter(function() {
+    if ($(this).css("background-image").match(patt)) {
+      $(this).remove();
+    }
+  });
+  return;
+}
 
 // clear current google map's markers to insert new ones 
 function clearMarkers() {
   infowindow = new google.maps.InfoWindow();
   infowindow.close();
-  const markerCluster = new MarkerClusterer(map, markers);
-  markerCluster.clearMarkers();
+
+  const markerCluster = new MarkerClusterer(map, markers, {
+    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
+  });
+
+  for (let it in markers) {
+    markers[it].setVisible(false);
+  }
+  markerCluster.repaint();
+
+  markerCluster.removeMarkers(markerCluster.getMarkers());
+
   for (let i = 0; i < markers.length; i++) {
     if (markers[i]) {
       markers[i].setMap(null);
     }
   }
+
   markers.length = 0;
+
+  markerCluster.clearMarkers();
+
+  MarketClusterClearRemain();
 }
 
 function addMarkers(projects) {
@@ -90,7 +103,6 @@ function addMarkers(projects) {
     "UD": "blue", "UC": "green", "RTB": "yellow" , "COD": "purple"
   }
 
-  projects = projects.sort((a, b) => (a.fields.country > b.fields.country) ? 1 : -1)
   let counterLat = 0; counterLng = 0; let j=0;
 
   // add markers and info window on the map
@@ -133,19 +145,14 @@ function addMarkers(projects) {
       this.infowindow.open(map, this);
     });
 
-    // Set Market Clusterer if any
-    if (i > 0 && i+1 < projects.length) {
-      if (projects[i].fields.country != projects[i+1].fields.country) {
+    // Set Market Clusterer
+    if (projects[i].fields.country != projects[i+(i+1==projects.length?0:1)].fields.country) {
         setTimeout(MarketCluster(i,j), 1);
-      }
-    }
 
-    // drop marker if not a Cluster
-    if (i > 0 && i+1 < projects.length) {
-      if ((projects[i].fields.country != projects[i-1].fields.country
-        ) && (projects[i].fields.country != projects[i+1].fields.country)) {
-        setTimeout(dropMarker(i), i * 100);
-      }
+        // set the market clusterer to a drop marker instead if only one country project
+        if (projects[i].fields.country != projects[i-1].fields.country) {
+          setTimeout(dropMarker(i), i * 100);
+        };
     }
 
     // build Info Content below map
@@ -174,7 +181,7 @@ function onPlaceChanged(filterCountry) {
       "lat": parseFloat(countryLatLng[0].fields.latitude),
       "lng": parseFloat(countryLatLng[0].fields.longitude)
     });
-    map.setZoom(5);
+    map.setZoom(6);
   } else {
     map.setCenter({ "lat": 34.5531, "lng": 18.0480 });
     map.setZoom(3);

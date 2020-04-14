@@ -8,3 +8,7 @@ class ProjectsFilterForm(forms.Form):
         widget=CountrySelectWidget(attrs={})
     )
     phase = forms.ChoiceField(choices=PHASE_INDEX_CHOICES, label='Phase', required=False)
+
+    def __init__(self, *args, **kwargs): 
+        super(ProjectsFilterForm, self).__init__(*args, **kwargs)                       
+        self.fields['phase'].disabled = True

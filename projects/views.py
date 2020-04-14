@@ -47,6 +47,7 @@ class ProjectCreateView(CreateView):
         form = form.save(commit=False)
         form.owner = self.request.user
         form.save()
+        messages.success(self.request, "Project Created")
         return HttpResponseRedirect(self.get_success_url()) 
 
     def get_success_url(self):
@@ -79,6 +80,7 @@ class ProjectUpdateView(UpdateView):
         if self.request.user == self.object.owner:
             form = form.save(commit=False)
             form.save()
+            messages.info(self.request, "Project Updated")
             return HttpResponseRedirect(self.get_success_url())
         else:
             messages.error(self.request, "Not the owner to change")
@@ -101,6 +103,7 @@ class ProjectDeleteView(DeleteView):
         self.object = self.get_object()
         if self.request.user == self.object.owner:
             self.object.delete()
+            messages.info(self.request, "Project Deleted")
         else:
             messages.error(self.request, "Not the owner to change")
         return HttpResponseRedirect(self.get_success_url())
