@@ -5,7 +5,7 @@ $('[data-toggle="tooltip"]').tooltip();
 
 // MAPS
 
-$(".section-container").parent().removeClass("container").addClass("container-fluid");
+$(".section-filtMap").parent().removeClass("container").addClass("container-fluid");
 
 function addWorldIcon(filterCountry) {
   if (filterCountry != "") {
@@ -20,10 +20,23 @@ function addWorldIcon(filterCountry) {
 // Country On Change Handling
 $('#index-form #id_country').on('change', function(e){
   e.preventDefault();
+
   // insert World Icon if All Countries is Selected
   addWorldIcon($(this).val());
+
   // zoom to country place if single country is selected
   onPlaceChanged($(this).val());
+
+  // build Info Content below map
+  if ($(this).val() != "") {
+    const projsFilter = projects.filter(
+      obj => obj.fields.country === $(this).val()
+    );
+    addResults(projsFilter);
+  } else {
+    addResults(projects);
+  };
+
 });
 
 // Font Weight to 100 the disabled phase filter
@@ -55,6 +68,10 @@ function initMap() {
 
   // zoom to country place if single country is selected
   onPlaceChanged($('#id_country').val());
+
+  // build Info Content below map
+  addResults(projects);
+
 };
 
 function MarketClusterClearRemain() {
@@ -80,7 +97,6 @@ function clearMarkers() {
     markers[it].setVisible(false);
   }
   markerCluster.repaint();
-
   markerCluster.removeMarkers(markerCluster.getMarkers());
 
   for (let i = 0; i < markers.length; i++) {
@@ -92,16 +108,17 @@ function clearMarkers() {
   markers.length = 0;
 
   markerCluster.clearMarkers();
-
   MarketClusterClearRemain();
+}
+
+function hideAllInfoWindows(map) {
+  markers.forEach(function(marker) {
+    marker.infowindow.close(map, marker);
+  });
 }
 
 function addMarkers(projects) {
   clearMarkers();
-
-  const phaseDictColours = {
-    "UD": "blue", "UC": "green", "RTB": "yellow" , "COD": "purple"
-  }
 
   let counterLat = 0; counterLng = 0; let j=0;
 
@@ -138,6 +155,7 @@ function addMarkers(projects) {
     
     // insert marker to array of markers
     markers.push(marker);
+    projects[i]["mk"]= i;
     
     // hook info window and close all opened ones
     google.maps.event.addListener(marker, 'click', function() {
@@ -154,8 +172,6 @@ function addMarkers(projects) {
           setTimeout(dropMarker(i), i * 100);
         };
     }
-
-    // build Info Content below map
     
   }
   return;
@@ -172,10 +188,16 @@ function MarketCluster(i,j) {
   return;
 }
 
-function onPlaceChanged(filterCountry) {
-  if (filterCountry != "") {
+function dropMarker(i) {
+  return function() {
+    markers[i].setMap(map);
+  };
+}
+
+function onPlaceChanged(filterCtry) {
+  if (filterCtry != "") {
     const countryLatLng = projectsLatLng.filter(
-      obj => obj.fields.name  ===  filterCountry
+      obj => obj.fields.name  ===  filterCtry
     );
     map.panTo({
       "lat": parseFloat(countryLatLng[0].fields.latitude),
@@ -189,53 +211,79 @@ function onPlaceChanged(filterCountry) {
 }
 
 function genHtmlContent(i) {
-  
-  const contentstring = "<table>" +
-  "<tbody>" + 
-  "<tr>" + 
-  "<td>" + "Phase" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.phase + "</td>" +
-  "</tr>" + 
-  "<tr>" + 
-  "<td>" + "MW" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.mw + "</td>" +
-  "</tr>" +
-  "<tr>" + 
-  "<td>" + "Budget Revenue" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.budget_revenue + "</td>" +
-  "</tr>" +
-  "<tr>" + 
-  "<td>" + "Budget Cogs" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.budget_cogs + "</td>" +
-  "</tr>" +
-  "<tr>" + 
-  "<td>" + "Cash Outflow No Vat" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.cash_out_no_vat + "</td>" +
-  "</tr>" +    
-  "<tr>" + 
-  "<td>" + "% of Completion" + "</td>" +
-  "<td class=" + '"px-1"' + ">:</td>" +
-  "<td>" + projects[i].fields.pct_of_completion + "</td>" +
-  "</tr>" +       
-  "</tbody>" +
-  "<table/>";
+  const contentstring = `<table><tbody>
+  <tr>
+  <td>Phase</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.phase}</td>
+  </tr>
+  <tr>
+  <td>MW</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.mw}</td>
+  </tr>
+  <tr>
+  <td>Budget Revenue</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.budget_revenue}</td>
+  </tr>
+  <tr>
+  <td>Budget Cogs</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.budget_cogs}</td>
+  </tr>
+  <tr>
+  <td>Cash Outflow No Vat</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.cash_out_no_vat}</td>
+  </tr>
+  <tr>
+  <td>% of Completion</td>
+  <td class="px-1">:</td>
+  <td>${projects[i].fields.pct_of_completion}</td>
+  </tr>
+  </tbody><table/>`;
 
   return contentstring;
 }
 
-function hideAllInfoWindows(map) {
-  markers.forEach(function(marker) {
-    marker.infowindow.close(map, marker);
-  });
+function rejectFields(obj, keys) { // fields not consider in looping through objects
+  return Object.keys(obj)
+    .filter(k => !keys.includes(k))
+    .map(k => Object.assign({}, {[k]: obj[k]}))
+    .reduce((res, o) => Object.assign(res, o), {});
 }
 
-function dropMarker(i) {
-  return function() {
-    markers[i].setMap(map);
-  };
+function addResults(projsFilterOrAll) {
+  let results = document.getElementById('results');
+  $("#results").empty();
+
+  for (let i = 0; i < projsFilterOrAll.length; i++) {
+    let tr = document.createElement('tr');
+
+    tr.onclick = function() {
+      onPlaceChanged(projsFilterOrAll[i].fields.country);
+      google.maps.event.trigger(markers[projsFilterOrAll[i]["mk"]], 'click');
+    };
+
+    let iconTd = document.createElement('td');
+    let icon = document.createElement('img');
+    let markerIcon = "http://maps.google.com/mapfiles/ms/icons/";
+    markerIcon += phaseDictColours[projsFilterOrAll[i].fields.phase] + "-dot.png";
+    icon.src = markerIcon;
+    iconTd.appendChild(icon);
+    tr.appendChild(iconTd);
+    
+    $.each(rejectFields(projsFilterOrAll[i].fields,['owner','budget_revenue', 
+      'budget_cogs','cash_out_no_vat','pct_of_completion', 'timestamp']), function(key,value){ 
+      let tdElem = document.createElement('td');
+      let tdTxt = document.createTextNode(value);
+      tdElem.appendChild(tdTxt);
+      tr.appendChild(tdElem);
+    });
+
+    results.appendChild(tr);
+  }
+
+  return;
 }

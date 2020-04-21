@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<section class="section-container">
+<section class="section-filtMap">
     <div class="row">
         <aside class="col-12 py-1 col-sm-3 col-md-3 col-lg-2">
 
@@ -46,6 +46,26 @@
     </div>
 </section>
 
+<section class="section-mapTbl">
+    <div class="row">
+        <div class="col-md-3 col-lg-2"> 
+            <ul class="list-group list-unstyled text-center py-1 d-none d-md-block" style="margin-top:-25px;">
+                <li class="list-group-item text-info borderless bg-aliceBlue">Marker Icon : 1</li>
+                <li class="list-group-item text-info borderless bg-white">Country : 2</li>
+                <li class="list-group-item text-info borderless bg-aliceBlue">Phase : 3</li>
+                <li class="list-group-item text-info borderless bg-white">MW : 4</li>
+            </ul>
+        </div>
+        <div class="col-md-9 col-lg-10">
+            <div id="listing" class="table-responsive">
+                <table id="resultsTable" class="table table-striped">
+                    <tbody id="results"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block body_end_head %}
@@ -58,5 +78,8 @@ let projectsLatLng = {{projectsLatLng|safe}};
 let map;
 let markers = new Array();
 const urlPost = "{% url 'index' %}";
+const phaseDictColours = {
+    "UD": "blue", "UC": "green", "RTB": "yellow" , "COD": "purple"
+};
 </script>
 {% endblock %}
