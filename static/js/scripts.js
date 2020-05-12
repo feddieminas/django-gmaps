@@ -8,10 +8,10 @@ $('[data-toggle="tooltip"]').tooltip();
 $(".section-filtMap").parent().removeClass("container").addClass("container-fluid");
 
 function addWorldIcon(filterCountry) {
-  if (filterCountry != "") {
+  if (filterCountry != "") { // use django - countries flag
     $('#flag_id_country').addClass('d-none').removeClass('d-none');
     $('#flag_id_country').next().remove();
-  } else {
+  } else { // use font-awesome global map as icon for All Countries display
     $('#flag_id_country').removeClass('d-none').addClass('d-none');
     $('#flag_id_country').after('<i class="fas fa-1x fa-globe" style="margin:6px 4px 0;"></i>');
   }
@@ -21,19 +21,19 @@ function addWorldIcon(filterCountry) {
 $('#index-form #id_country').on('change', function(e){
   e.preventDefault();
 
-  // insert World Icon if All Countries is Selected
+  // insert World Icon if All Countries filter is Selected
   addWorldIcon($(this).val());
 
-  // zoom to country place if single country is selected
+  // zoom to country place if switch country
   onPlaceChanged($(this).val());
 
   // build Info Content below map
-  if ($(this).val() != "") {
+  if ($(this).val() != "") { // if not All Countries filter is selected
     const projsFilter = projects.filter(
       obj => obj.fields.country === $(this).val()
     );
     addResults(projsFilter);
-  } else {
+  } else { // if All Countries filter is selected
     addResults(projects);
   };
 
@@ -43,7 +43,6 @@ $('#index-form #id_country').on('change', function(e){
 $('#index-form #id_phase').css({'font-weight': 100});
 
 function initMap() {
-
   // Insert Map
   const options = {
       zoom: 1,
@@ -63,10 +62,10 @@ function initMap() {
   //add Markers
   addMarkers(projects);
 
-  // insert World Icon if All Countries is Selected
+  // insert World Icon if All Countries filter is Selected
   addWorldIcon($('#id_country').val());
 
-  // zoom to country place if single country is selected
+  // zoom to country place if switch country
   onPlaceChanged($('#id_country').val());
 
   // build Info Content below map
@@ -74,7 +73,7 @@ function initMap() {
 
 };
 
-function MarketClusterClearRemain() {
+function MarketClusterClearRemain() { // rm any clustered bg-image that still there
   const patt = /markerclusterer/i;
   const mcRemainders = $("#map div").filter(function() {
     if ($(this).css("background-image").match(patt)) {
@@ -84,34 +83,38 @@ function MarketClusterClearRemain() {
   return;
 }
 
-// clear current google map's markers to insert new ones 
+// clear current google map's markers and clusters to insert new ones 
 function clearMarkers() {
   infowindow = new google.maps.InfoWindow();
   infowindow.close();
 
-  const markerCluster = new MarkerClusterer(map, markers, {
-    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-  });
-
   for (let it in markers) {
     markers[it].setVisible(false);
   }
-  markerCluster.repaint();
-  markerCluster.removeMarkers(markerCluster.getMarkers());
+
+  for (let i = 0; i < markerClusters.length; i++) {
+    markerClusters[i].repaint();
+    markerClusters[i].removeMarkers(markerClusters[i].getMarkers());
+  };
 
   for (let i = 0; i < markers.length; i++) {
     if (markers[i]) {
       markers[i].setMap(null);
     }
-  }
+  };
 
   markers.length = 0;
 
-  markerCluster.clearMarkers();
+  for (let i = 0; i < markerClusters.length; i++) {
+    markerClusters[i].clearMarkers();
+  };
+
+  markerClusters.length = 0;
+
   MarketClusterClearRemain();
 }
 
-function hideAllInfoWindows(map) {
+function hideAllInfoWindows(map) { // close all info to just open the one selected (marker clicked)
   markers.forEach(function(marker) {
     marker.infowindow.close(map, marker);
   });
@@ -122,15 +125,16 @@ function addMarkers(projects) {
 
   let counterLat = 0; counterLng = 0; let j=0;
 
-  // add markers and info window on the map
+  // add markers, clusterers and info window on the map
   for (let i = 0; i < projects.length; i++) {
-
+    // switched countries or looping through to the same country still
     if (i>0 && projects[i].fields.country != projects[i-1].fields.country) {
       counterLat = 0; counterLng = 0; j = i;
     } else {
       counterLat+= 0.032; counterLng+= 0.0091;
     }
 
+    // filter projects per country
     let countryLatLng = projectsLatLng.filter(
       obj => obj.fields.name  ===  projects[i].fields.country
     );
@@ -142,6 +146,7 @@ function addMarkers(projects) {
       content: genHtmlContent(i),
     });
 
+    // Set Marker
     let marker = new google.maps.Marker({
       position: {
         "lat": parseFloat(countryLatLng[0].fields.latitude) + counterLat,
@@ -163,14 +168,22 @@ function addMarkers(projects) {
       this.infowindow.open(map, this);
     });
 
-    // Set Market Clusterer
-    if (projects[i].fields.country != projects[i+(i+1==projects.length?0:1)].fields.country) {
-        setTimeout(MarketCluster(i,j), 1);
+    projects[i]["mkCluster"] = Math.max(0,markerClusters.length - 1);
 
-        // set the market clusterer to a drop marker instead if only one country project
-        if (projects[i].fields.country != projects[i-1].fields.country) {
-          setTimeout(dropMarker(i), i * 100);
-        };
+    // Set Market Clusterer
+    if (projects[i].fields.country != projects[i+(i+1==projects.length?-1:1)].fields.country) {
+      markerClusters.push(MarketCluster(i,j));
+      projects[i]["mkCluster"] = markerClusters.length - 1;
+
+      google.maps.event.addListener(markerClusters[projects[i]["mkCluster"]], 
+        'clusterclick', function(cluster) { // mktclusterplus ??
+          map.setCenter(cluster.getCenter());
+      });
+
+      // set the market clusterer to a drop marker instead if only one country project
+      if (projects[i].fields.country != projects[i-1].fields.country) {
+        setTimeout(dropMarker(i), i * 100);
+      };
     }
     
   }
@@ -178,14 +191,14 @@ function addMarkers(projects) {
 }
 
 function MarketCluster(i,j) {
-  let markerCluster = new MarkerClusterer(map, markers.slice(j,i+1),
+  return markerCluster = new MarkerClusterer(map, markers.slice(j,i+1),
     {
-      maxZoom: 10,
       averageCenter: true,
+      maxZoom: 10,
+      prevZoom: 10,
       imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
     }
-    )
-  return;
+  );
 }
 
 function dropMarker(i) {
@@ -195,22 +208,22 @@ function dropMarker(i) {
 }
 
 function onPlaceChanged(filterCtry) {
-  if (filterCtry != "") {
+  if (filterCtry != "") { // Country is Selected
     const countryLatLng = projectsLatLng.filter(
       obj => obj.fields.name  ===  filterCtry
     );
     map.panTo({
-      "lat": parseFloat(countryLatLng[0].fields.latitude),
-      "lng": parseFloat(countryLatLng[0].fields.longitude)
+        "lat": parseFloat(countryLatLng[0].fields.latitude),
+        "lng": parseFloat(countryLatLng[0].fields.longitude)
     });
     map.setZoom(6);
-  } else {
+  } else { // if All Countries filter is Selected
     map.setCenter({ "lat": 34.5531, "lng": 18.0480 });
     map.setZoom(3);
   }
 }
 
-function genHtmlContent(i) {
+function genHtmlContent(i) { // info window content pop-up
   const contentstring = `<table><tbody>
   <tr>
   <td>Phase</td>
@@ -247,14 +260,14 @@ function genHtmlContent(i) {
   return contentstring;
 }
 
-function rejectFields(obj, keys) { // fields not consider in looping through objects
+function rejectFields(obj, keys) { // fields not considered when looping through objects
   return Object.keys(obj)
     .filter(k => !keys.includes(k))
     .map(k => Object.assign({}, {[k]: obj[k]}))
     .reduce((res, o) => Object.assign(res, o), {});
 }
 
-function addResults(projsFilterOrAll) {
+function addResults(projsFilterOrAll) { // display table tbody below map to show contents
   let results = document.getElementById('results');
   $("#results").empty();
 
@@ -262,8 +275,13 @@ function addResults(projsFilterOrAll) {
     let tr = document.createElement('tr');
 
     tr.onclick = function() {
-      onPlaceChanged(projsFilterOrAll[i].fields.country);
-      google.maps.event.trigger(markers[projsFilterOrAll[i]["mk"]], 'click');
+      // cond 1: since we play per country, lat and lng should change significantly to understand if we click to a diff country
+      const latDelta = Math.abs(markerClusters[projsFilterOrAll[i]["mkCluster"]].map.center.lat()) - Math.abs(markers[projsFilterOrAll[i]["mk"]].position.lat());
+      const lngDelta = Math.abs(markerClusters[projsFilterOrAll[i]["mkCluster"]].map.center.lng()) - Math.abs(markers[projsFilterOrAll[i]["mk"]].position.lng());
+      // cond 2: assumed that when you are inside a Market Cluster, zoom exceeds 10
+      if (map.getZoom() <= 10 || (latDelta + lngDelta) > 1) {onPlaceChanged(projsFilterOrAll[i].fields.country);}
+      google.maps.event.trigger(markerClusters[projsFilterOrAll[i]["mkCluster"]].clusters_, 'clusterclick'); // cluster click event
+      google.maps.event.trigger(markers[projsFilterOrAll[i]["mk"]], 'click'); // marker click event
     };
 
     let iconTd = document.createElement('td');

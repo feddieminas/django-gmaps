@@ -48,13 +48,17 @@
 
 <section class="section-mapTbl">
     <div class="row">
-        <div class="col-md-3 col-lg-2"> 
-            <ul class="list-group list-unstyled text-center py-1 d-none d-md-block" style="margin-top:-25px;">
-                <li class="list-group-item text-info borderless bg-aliceBlue">Marker Icon : 1</li>
-                <li class="list-group-item text-info borderless bg-white">Country : 2</li>
-                <li class="list-group-item text-info borderless bg-aliceBlue">Phase : 3</li>
-                <li class="list-group-item text-info borderless bg-white">MW : 4</li>
-            </ul>
+        <div class="col-md-3 col-lg-2">
+            <div class="d-none d-md-block pos-sticky">
+                <h6 class="text-white text-center" style="background-color:#00417a;height:22px;">
+                <u>Table Columns</u></h6>
+                <ul class="list-group list-unstyled text-center py-1">
+                    <li class="list-group-item text-info borderless bg-aliceBlue">Marker Icon : 1</li>
+                    <li class="list-group-item text-info borderless bg-white">Country : 2</li>
+                    <li class="list-group-item text-info borderless bg-aliceBlue">Phase : 3</li>
+                    <li class="list-group-item text-info borderless bg-white">MW : 4</li>
+                </ul>
+            </div>
         </div>
         <div class="col-md-9 col-lg-10">
             <div id="listing" class="table-responsive">
@@ -73,13 +77,14 @@
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{gm_key|safe}}&libraries=places&callback=initMap"></script>
 
 <script>
-let projects = {{projects|safe}}.sort((a, b) => (a.fields.country > b.fields.country) ? 1 : -1);
-let projectsLatLng = {{projectsLatLng|safe}};
+let projects = {{projects|safe}}.sort((a, b) => (a.fields.country > b.fields.country) ? 1 : -1); // my projects sorted to ease conditions
+let projectsLatLng = {{projectsLatLng|safe}}; // my lat and lng stored in py
 let map;
-let markers = new Array();
+let markers = new Array(); // create a global array for countries projects
 const urlPost = "{% url 'index' %}";
-const phaseDictColours = {
+const phaseDictColours = { // distinct my colours per phase
     "UD": "blue", "UC": "green", "RTB": "yellow" , "COD": "purple"
 };
+let markerClusters = new Array(); // create a global array for my clusters, more than one project per country
 </script>
 {% endblock %}
