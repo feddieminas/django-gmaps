@@ -1,5 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap');
 
 /* ---- BASE ---- */
+
+body {
+    font-family: 'Open Sans', sans-serif;
+}
 
 .block-divider--footer {
     width: 90%;
@@ -42,6 +47,17 @@
 
 .bg-aliceBlue {
     background-color: aliceblue;
+}
+
+.fadedOut {
+    opacity: 0;
+}
+
+.transitionAll {
+    -webkit-transition: all 0.5s linear;
+    -moz-transition: all 0.5s linear;
+    -o-transition: all 0.5s linear;
+    transition: all 0.5s linear;
 }
 
 #results tr:hover {

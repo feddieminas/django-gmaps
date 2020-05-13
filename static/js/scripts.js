@@ -7,6 +7,11 @@ $('[data-toggle="tooltip"]').tooltip();
 
 $(".section-filtMap").parent().removeClass("container").addClass("container-fluid");
 
+$("#index-btn-showHideTbl").click(function() {
+  $(".section-mapTbl aside").toggleClass("d-lg-block fadedOut");
+  $("#listing").parent().toggleClass("col-lg-10 transitionAll");
+});
+
 function addWorldIcon(filterCountry) {
   if (filterCountry != "") { // use django - countries flag
     $('#flag_id_country').addClass('d-none').removeClass('d-none');
