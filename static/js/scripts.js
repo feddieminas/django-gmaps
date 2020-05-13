@@ -8,7 +8,7 @@ $('[data-toggle="tooltip"]').tooltip();
 $(".section-filtMap").parent().removeClass("container").addClass("container-fluid");
 
 $("#index-btn-showHideTbl").click(function() {
-  $(".section-mapTbl aside").toggleClass("d-lg-block fadedOut");
+  $(".section-mapTbl aside").toggleClass("d-lg-block fadedIn fadedOut");
   $("#listing").parent().toggleClass("col-lg-10 transitionAll");
 });
 
